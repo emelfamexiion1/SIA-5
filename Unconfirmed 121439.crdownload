@@ -1,0 +1,427 @@
+// State Awal Sistem SIA-P Ketoprak Rizki (Sesuai Dokumen Tahap 2)
+const state = {
+    role: 'owner',
+    invoiceSeq: 90,
+    expenseSeq: 35,
+    products: [
+        { code: 'PRD-01', name: 'Ketoprak Telur', category: 'Produk Jadi', price: 18000, hpp: 8000, stock: 50 },
+        { code: 'PRD-02', name: 'Ketoprak Biasa', category: 'Produk Jadi', price: 14000, hpp: 6000, stock: 50 },
+        { code: 'PRD-03', name: 'Es Teh Manis', category: 'Minuman', price: 4000, hpp: 1500, stock: 80 },
+        { code: 'BHN-01', name: 'Kacang Tanah (kg)', category: 'Bahan Baku', price: 28000, hpp: 28000, stock: 10 },
+        { code: 'BHN-02', name: 'Tahu Putih (potong)', category: 'Bahan Baku', price: 700, hpp: 700, stock: 100 }
+    ],
+    cart: [],
+    financials: {
+        cash: 1850000,
+        inventory: 450000,
+        equipment: 3500000,
+        capital: 5600000,
+        salesOct: 5200000,
+        salesJanSep: 45000000,
+        cogs: 2300000,
+        salaryExp: 2200000,
+        utilExp: 350000,
+        otherExp: 150000
+    },
+    journals: [
+        { time: '31/10/2026', ref: 'SALDO-AWAL', desc: 'Saldo Awal Periode Laporan SAK EMKM', debit: '1-1100 Kas & Bank', credit: '3-1000 Modal Pemilik', amount: 1850000 }
+    ]
+};
+
+// Format Rupiah
+function formatRp(num) {
+    return 'Rp ' + Math.round(num).toLocaleString('id-ID');
+}
+
+// Inisialisasi Halaman
+document.addEventListener('DOMContentLoaded', () => {
+    updateClock();
+    renderMasterData();
+    populatePosProducts();
+    renderAllReports();
+});
+
+function updateClock() {
+    const now = new Date();
+    const dateInput = document.getElementById('pos-date');
+    if (dateInput) {
+        dateInput.value = now.toLocaleDateString('id-ID') + ' ' + now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    }
+}
+
+// Navigasi Tab
+function showTab(tabId, btnEl) {
+    if (state.role === 'cashier' && btnEl.classList.contains('owner-only')) {
+        alert('AKSES DITOLAK (Segregation of Duties): Kasir hanya memiliki hak akses ke Modul POS Penjualan.');
+        return;
+    }
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    const targetPanel = document.getElementById('tab-' + tabId);
+    if (targetPanel) targetPanel.classList.add('active');
+    if (btnEl) btnEl.classList.add('active');
+}
+
+// Pengaturan Hak Akses (SOD)
+function switchRole() {
+    const role = document.getElementById('roleSelect').value;
+    state.role = role;
+    const badge = document.getElementById('roleBadge');
+    const ownerBtns = document.querySelectorAll('.owner-only');
+
+    if (role === 'cashier') {
+        badge.textContent = 'KASIR (POS ONLY)';
+        badge.className = 'badge badge-cashier';
+        ownerBtns.forEach(b => b.classList.add('locked'));
+        const posBtn = document.querySelector('.nav-btn[data-tab="pos"]');
+        showTab('pos', posBtn);
+    } else {
+        badge.textContent = 'FULL ACCESS';
+        badge.className = 'badge badge-owner';
+        ownerBtns.forEach(b => b.classList.remove('locked'));
+    }
+}
+
+// Render Master Data
+function renderMasterData() {
+    const tbody = document.getElementById('master-items-body');
+    tbody.innerHTML = state.products.map(p => `
+        <tr>
+            <td><strong>${p.code}</strong></td>
+            <td>${p.name}</td>
+            <td>${p.category}</td>
+            <td>${formatRp(p.price)}</td>
+            <td>${p.stock}</td>
+        </tr>
+    `).join('');
+}
+
+// Modul 2.1: POS Penjualan
+function populatePosProducts() {
+    const sel = document.getElementById('pos-product-select');
+    sel.innerHTML = state.products
+        .filter(p => p.category !== 'Bahan Baku')
+        .map(p => `<option value="${p.code}">${p.code} - ${p.name} (${formatRp(p.price)})</option>`)
+        .join('');
+}
+
+function addPosItem() {
+    const code = document.getElementById('pos-product-select').value;
+    const qty = parseInt(document.getElementById('pos-qty').value) || 1;
+    const prod = state.products.find(p => p.code === code);
+    if (!prod) return;
+
+    const existing = state.cart.find(c => c.code === code);
+    if (existing) {
+        existing.qty += qty;
+    } else {
+        state.cart.push({ ...prod, qty: qty, discount: 0 });
+    }
+    renderCart();
+}
+
+function removeCartItem(index) {
+    state.cart.splice(index, 1);
+    renderCart();
+}
+
+function renderCart() {
+    const tbody = document.getElementById('pos-cart-body');
+    let total = 0;
+
+    tbody.innerHTML = state.cart.map((item, idx) => {
+        const sub = item.price * item.qty;
+        total += sub;
+        return `
+            <tr>
+                <td>${item.code}</td>
+                <td>${item.name}</td>
+                <td><input type="text" value="${formatRp(item.price)}" readonly></td>
+                <td>${item.qty}</td>
+                <td><input type="text" value="0%" readonly></td>
+                <td><input type="text" value="${formatRp(sub)}" readonly></td>
+                <td><button type="button" class="btn btn-sm" onclick="removeCartItem(${idx})">Hapus</button></td>
+            </tr>
+        `;
+    }).join('');
+
+    document.getElementById('pos-gross').textContent = formatRp(total);
+    document.getElementById('pos-total').textContent = formatRp(total);
+}
+
+function submitSale() {
+    if (state.cart.length === 0) {
+        alert('Keranjang pesanan masih kosong!');
+        return;
+    }
+
+    const invNo = document.getElementById('pos-invoice').value;
+    const payment = document.getElementById('pos-payment').value;
+    const dateStr = document.getElementById('pos-date').value;
+    let totalSales = 0;
+    let totalHpp = 0;
+
+    state.cart.forEach(item => {
+        totalSales += item.price * item.qty;
+        totalHpp += item.hpp * item.qty;
+        const masterProd = state.products.find(p => p.code === item.code);
+        if (masterProd) masterProd.stock = Math.max(0, masterProd.stock - item.qty);
+    });
+
+    state.financials.cash += totalSales;
+    state.financials.salesOct += totalSales;
+    state.financials.cogs += totalHpp;
+    state.financials.inventory = Math.max(0, state.financials.inventory - totalHpp);
+
+    state.journals.unshift({
+        time: dateStr,
+        ref: invNo,
+        desc: `Penjualan POS (${payment})`,
+        debit: '1-1100 Kas dan Bank',
+        credit: '4-1000 Penjualan Bersih',
+        amount: totalSales
+    });
+
+    const itemsText = state.cart.map(i => `${i.name} x${i.qty} = ${formatRp(i.price * i.qty)}`).join('\n');
+    document.getElementById('receipt-preview').textContent =
+`========================================
+[RANGKAP 1 - PELANGGAN] KETOPRAK RIZKI
+No: ${invNo} | Tgl: ${dateStr}
+Metode: ${payment}
+----------------------------------------
+${itemsText}
+----------------------------------------
+TOTAL BAYAR : ${formatRp(totalSales)}
+PPN (Non-PKP): Rp 0
+========================================
+
+========================================
+[RANGKAP 2 - DAPUR (KARYAWAN 2)]
+No: ${invNo} | Segera Siapkan Pesanan:
+${itemsText}
+========================================`;
+
+    state.cart = [];
+    state.invoiceSeq++;
+    document.getElementById('pos-invoice').value = 'FK-202611-00' + state.invoiceSeq;
+    renderCart();
+    renderMasterData();
+    renderAllReports();
+    alert('Transaksi penjualan berhasil disimpan & dijurnal otomatis!');
+}
+
+// Modul 2.2: Pembelian & Kas Keluar
+function validateExpenseFile() {
+    const fileInput = document.getElementById('exp-file');
+    const btn = document.getElementById('btn-save-expense');
+    const status = document.getElementById('exp-file-status');
+
+    if (fileInput.files.length > 0) {
+        btn.disabled = false;
+        status.textContent = 'Status: Bukti nota terlampir (' + fileInput.files[0].name + '). Siap disimpan.';
+        status.className = 'text-success';
+    } else {
+        btn.disabled = true;
+        status.textContent = 'Status: Belum ada foto nota diunggah (Tombol simpan terkunci).';
+        status.className = 'text-danger';
+    }
+}
+
+function submitExpense() {
+    const no = document.getElementById('exp-no').value;
+    const vendor = document.getElementById('exp-vendor').value;
+    const acc = document.getElementById('exp-account').value;
+    const amount = parseFloat(document.getElementById('exp-amount').value) || 0;
+    const desc = document.getElementById('exp-desc').value;
+
+    if (amount <= 0) return;
+
+    state.financials.cash -= amount;
+    let debitLabel = '';
+
+    if (acc === '1-1200') {
+        state.financials.inventory += amount;
+        debitLabel = '1-1200 Persediaan Bahan Baku';
+    } else if (acc === '5-1100') {
+        state.financials.cogs += amount;
+        debitLabel = '5-1100 Beban Bahan Baku';
+    } else if (acc === '5-2200') {
+        state.financials.utilExp += amount;
+        debitLabel = '5-2200 Beban Sewa & Utilitas';
+    } else {
+        state.financials.otherExp += amount;
+        debitLabel = '5-2300 Beban Perlengkapan';
+    }
+
+    state.journals.unshift({
+        time: document.getElementById('exp-date').value,
+        ref: no,
+        desc: `${vendor} - ${desc}`,
+        debit: debitLabel,
+        credit: '1-1100 Kas dan Bank',
+        amount: amount
+    });
+
+    state.expenseSeq++;
+    document.getElementById('exp-no').value = 'KK-202611-00' + state.expenseSeq;
+    document.getElementById('exp-file').value = '';
+    validateExpenseFile();
+    renderAllReports();
+    alert('Pengeluaran kas berhasil dicatat dan dijurnal!');
+}
+
+// Modul 2.3: Penggajian & PPh 21
+function calcPayroll() {
+    const basic = parseFloat(document.getElementById('pay-basic').value) || 0;
+    const meal = parseFloat(document.getElementById('pay-meal').value) || 0;
+    const deduct = parseFloat(document.getElementById('pay-deduct').value) || 0;
+    const gross = basic + meal;
+    const pph21 = gross > 4500000 ? (gross - 4500000) * 0.05 : 0;
+    const net = gross - deduct - pph21;
+
+    document.getElementById('pay-pph21').value = pph21 === 0 ? 'Rp 0 (0% - Di bawah PTKP)' : formatRp(pph21);
+    document.getElementById('pay-gross').textContent = formatRp(gross);
+    document.getElementById('pay-net').textContent = formatRp(net);
+}
+
+function submitPayroll() {
+    const emp = document.getElementById('pay-emp').value;
+    const basic = parseFloat(document.getElementById('pay-basic').value) || 0;
+    const meal = parseFloat(document.getElementById('pay-meal').value) || 0;
+    const net = basic + meal;
+
+    state.financials.cash -= net;
+    state.financials.salaryExp += net;
+
+    state.journals.unshift({
+        time: new Date().toLocaleDateString('id-ID'),
+        ref: 'GAJI-202611',
+        desc: `Pembayaran Gaji ${emp}`,
+        debit: '5-2100 Beban Gaji Karyawan',
+        credit: '1-1100 Kas dan Bank',
+        amount: net
+    });
+
+    renderAllReports();
+    alert(`Slip gaji ${emp} sebesar ${formatRp(net)} berhasil diproses!`);
+}
+
+// Modul 2.4: Cash Count & Stock Adj
+function checkCashCount() {
+    const phys = parseFloat(document.getElementById('cc-physical').value);
+    const sys = state.financials.cash;
+    const res = document.getElementById('cc-result');
+
+    if (isNaN(phys)) {
+        res.innerHTML = '<span class="text-danger">Masukkan nominal kas fisik terlebih dahulu.</span>';
+        return;
+    }
+
+    const diff = phys - sys;
+    if (diff === 0) {
+        res.innerHTML = '<div class="summary-box text-success">COCOK (Selisih Rp 0) → Verifikasi Closing Harian Disetujui.</div>';
+    } else {
+        res.innerHTML = `<div class="summary-box text-danger">SELISIH KAS: ${formatRp(diff)} → Wajib Investigasi Nota & Struk!</div>`;
+    }
+}
+
+function submitStockAdj() {
+    const amt = parseFloat(document.getElementById('adj-amount').value) || 0;
+    if (amt <= 0) return;
+
+    state.financials.inventory = Math.max(0, state.financials.inventory - amt);
+    state.financials.cogs += amt;
+
+    state.journals.unshift({
+        time: new Date().toLocaleDateString('id-ID'),
+        ref: 'ADJ-STOK',
+        desc: 'Pemakaian Bahan Baku Produksi',
+        debit: '5-1100 Beban Pokok Penjualan',
+        credit: '1-1200 Persediaan Bahan Baku',
+        amount: amt
+    });
+
+    renderAllReports();
+    alert('Penyesuaian stok berhasil dijurnal!');
+}
+
+// Simulasi Pajak > 500 Juta
+function simulateOver500M() {
+    state.financials.salesJanSep = 496000000;
+    renderAllReports();
+    alert('Simulasi aktif: Omzet Jan-Sep diubah menjadi Rp 496.000.000 sehingga total kumulatif melewati batas Rp 500 Juta.');
+}
+
+// Modul 3.0: Render Semua Laporan & KPI
+function renderAllReports() {
+    const f = state.financials;
+    const grossProfit = f.salesOct - f.cogs;
+    const totalOpEx = f.salaryExp + f.utilExp + f.otherExp;
+    const ebt = grossProfit - totalOpEx;
+
+    const cumRev = f.salesJanSep + f.salesOct;
+    const taxableBase = cumRev > 500000000 ? Math.min(f.salesOct, cumRev - 500000000) : 0;
+    const pphFinal = taxableBase * 0.005;
+    const netProfit = ebt - pphFinal;
+
+    document.getElementById('kpi-cash').textContent = formatRp(f.cash);
+    document.getElementById('kpi-rev').textContent = formatRp(f.salesOct);
+    document.getElementById('kpi-profit').textContent = formatRp(netProfit);
+    document.getElementById('kpi-cum-rev').textContent = formatRp(cumRev);
+    document.getElementById('cc-system').value = formatRp(f.cash);
+
+    const taxStatus = document.getElementById('kpi-tax-status');
+    if (cumRev <= 500000000) {
+        taxStatus.textContent = 'Bebas Pajak (< Rp500 Juta)';
+        taxStatus.className = 'text-success';
+    } else {
+        taxStatus.textContent = 'Kena PPh Final 0,5% (> Rp500 Juta)';
+        taxStatus.className = 'text-danger';
+    }
+
+    document.getElementById('rep-sales').textContent = formatRp(f.salesOct);
+    document.getElementById('rep-cogs').textContent = `(${formatRp(f.cogs)})`;
+    document.getElementById('rep-gross').textContent = formatRp(grossProfit);
+    document.getElementById('rep-salary').textContent = `(${formatRp(f.salaryExp)})`;
+    document.getElementById('rep-util').textContent = `(${formatRp(f.utilExp)})`;
+    document.getElementById('rep-other').textContent = `(${formatRp(f.otherExp)})`;
+    document.getElementById('rep-ebt').textContent = formatRp(ebt);
+    document.getElementById('rep-tax').textContent = `(${formatRp(pphFinal)})`;
+    document.getElementById('rep-net').textContent = formatRp(netProfit);
+
+    const totalAsset = f.cash + f.inventory + f.equipment;
+    const totalLE = f.capital + netProfit;
+    document.getElementById('bal-cash').textContent = formatRp(f.cash);
+    document.getElementById('bal-inv').textContent = formatRp(f.inventory);
+    document.getElementById('bal-total-asset').textContent = formatRp(totalAsset);
+    document.getElementById('bal-retained').textContent = formatRp(netProfit);
+    document.getElementById('bal-total-le').textContent = formatRp(totalLE);
+
+    document.getElementById('tax-table-body').innerHTML = `
+        <tr>
+            <td>Jan - Sep 2026</td>
+            <td>${formatRp(f.salesJanSep)}</td>
+            <td>${formatRp(f.salesJanSep)}</td>
+            <td>${f.salesJanSep <= 500000000 ? 'Fasilitas Bebas Pajak' : 'Melebihi Batas'}</td>
+            <td>Rp 0</td>
+        </tr>
+        <tr>
+            <td>Oktober / Berjalan 2026</td>
+            <td>${formatRp(f.salesOct)}</td>
+            <td>${formatRp(cumRev)}</td>
+            <td>${cumRev <= 500000000 ? 'Fasilitas Bebas Pajak' : 'Kena Tarif 0,5%'}</td>
+            <td><strong>${formatRp(pphFinal)}</strong></td>
+        </tr>
+    `;
+
+    document.getElementById('journal-body').innerHTML = state.journals.map(j => `
+        <tr>
+            <td>${j.time}</td>
+            <td><strong>${j.ref}</strong></td>
+            <td>${j.desc}</td>
+            <td>${j.debit}</td>
+            <td>${j.credit}</td>
+            <td>${formatRp(j.amount)}</td>
+        </tr>
+    `).join('');
+}

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIA-P Ketoprak Rizki - Prototype Tahap 3</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Top Header & Role Switcher (Segregation of Duties) -->
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-badge">SIA-P</div>
+            <div>
+                <h1>KETOPRAK RIZKI</h1>
+                <p>Jl. Hayam Wuruk, Pleburan, Semarang Selatan • Kelompok 5 Undip</p>
+            </div>
+        </div>
+        <div class="role-box">
+            <label for="roleSelect">Hak Akses (SOD):</label>
+            <select id="roleSelect" onchange="switchRole()">
+                <option value="owner">Pemilik (Akses Penuh)</option>
+                <option value="cashier">Karyawan 1 - Kasir (Terbatas POS)</option>
+            </select>
+            <span id="roleBadge" class="badge badge-owner">FULL ACCESS</span>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="nav-group">
+                <div class="nav-title">UTAMA</div>
+                <button class="nav-btn active" data-tab="dashboard" onclick="showTab('dashboard', this)">Dashboard &amp; VTOC</button>
+                <button class="nav-btn" data-tab="flowchart" onclick="showTab('flowchart', this)">Flowchart &amp; Internal Control</button>
+            </div>
+            <div class="nav-group">
+                <div class="nav-title">1.0 MODUL MASTER DATA</div>
+                <button class="nav-btn" data-tab="master" onclick="showTab('master', this)">Master Barang, Vendor &amp; COA</button>
+            </div>
+            <div class="nav-group">
+                <div class="nav-title">2.0 MODUL TRANSAKSI</div>
+                <button class="nav-btn" data-tab="pos" onclick="showTab('pos', this)">2.1 Form Penjualan (POS)</button>
+                <button class="nav-btn owner-only" data-tab="expense" onclick="showTab('expense', this)">2.2 Pembelian &amp; Kas Keluar</button>
+                <button class="nav-btn owner-only" data-tab="payroll" onclick="showTab('payroll', this)">2.3 Penggajian &amp; PPh 21</button>
+                <button class="nav-btn owner-only" data-tab="stock" onclick="showTab('stock', this)">2.4 Penyesuaian Stok &amp; Kas</button>
+            </div>
+            <div class="nav-group">
+                <div class="nav-title">3.0 MODUL LAPORAN (SAK EMKM)</div>
+                <button class="nav-btn owner-only" data-tab="reports" onclick="showTab('reports', this)">3.1 - 3.4 Laporan &amp; Pajak PP 55</button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- TAB: DASHBOARD & VTOC -->
+            <section id="tab-dashboard" class="tab-panel active">
+                <div class="section-header">
+                    <h2>Dashboard Ringkasan &amp; Arsitektur VTOC</h2>
+                    <span class="period-tag">Periode Berjalan: Oktober - November 2026</span>
+                </div>
+
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <span class="kpi-label">Saldo Kas &amp; Bank</span>
+                        <h3 id="kpi-cash">Rp 1.850.000</h3>
+                        <small>Update real-time dari jurnal</small>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">Omzet Bulan Berjalan</span>
+                        <h3 id="kpi-rev">Rp 5.200.000</h3>
+                        <small>Target rata-rata Rp5.000.000/bln</small>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">Laba Bersih Bulan Ini</span>
+                        <h3 id="kpi-profit">Rp 200.000</h3>
+                        <small>Standar SAK EMKM</small>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">Omzet Kumulatif 2026 (PP 55)</span>
+                        <h3 id="kpi-cum-rev">Rp 50.200.000</h3>
+                        <small id="kpi-tax-status" class="text-success">Bebas Pajak (&lt; Rp500 Juta)</small>
+                    </div>
+                </div>
+
+                <!-- VTOC Diagram -->
+                <div class="card mt-20">
+                    <h3>3.2 Diagram Visual Table of Contents (VTOC) SIA-P Ketoprak Rizki</h3>
+                    <div class="vtoc-root">SISTEM INFORMASI AKUNTANSI &amp; PERPAJAKAN (SIA-P) KETOPRAK RIZKI</div>
+                    <div class="vtoc-grid">
+                        <div class="vtoc-col">
+                            <div class="vtoc-head">1.0 MODUL MASTER DATA</div>
+                            <ul>
+                                <li>1.1 Data Barang / Bahan Baku</li>
+                                <li>1.2 Data Supplier / Vendor</li>
+                                <li>1.3 Data Pelanggan</li>
+                                <li>1.4 Data Karyawan &amp; PTKP</li>
+                                <li>1.5 Daftar Akun (COA)</li>
+                            </ul>
+                        </div>
+                        <div class="vtoc-col">
+                            <div class="vtoc-head">2.0 MODUL TRANSAKSI</div>
+                            <ul>
+                                <li>2.1 Form Penjualan (POS)</li>
+                                <li>2.2 Form Pembelian / Kas Keluar</li>
+                                <li>2.3 Form Penggajian (Slip Gaji)</li>
+                                <li>2.4 Form Penyesuaian Stok</li>
+                            </ul>
+                        </div>
+                        <div class="vtoc-col">
+                            <div class="vtoc-head">3.0 MODUL LAPORAN</div>
+                            <ul>
+                                <li>3.1 Laporan Laba Rugi</li>
+                                <li>3.2 Laporan Posisi Keuangan</li>
+                                <li>3.3 Rekap Pajak PP 55 &amp; PPh 21</li>
+                                <li>3.4 Laporan Stok &amp; Arus Kas</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: FLOWCHART & INTERNAL CONTROL -->
+            <section id="tab-flowchart" class="tab-panel">
+                <div class="section-header">
+                    <h2>3.3 Flowchart Swimlane &amp; 3.7 Matriks Pengendalian Internal</h2>
+                </div>
+                <div class="card">
+                    <h3>Alur Proses Bisnis Usulan (Segregation of Duties)</h3>
+                    <div class="swimlane-grid">
+                        <div class="lane">
+                            <div class="lane-title">KARYAWAN 1 (KASIR)</div>
+                            <div class="step">[MULAI] Pelanggan Datang</div>
+                            <div class="arrow">↓</div>
+                            <div class="step">Input Pesanan pada Form POS</div>
+                            <div class="arrow">↓</div>
+                            <div class="step">Terima Pembayaran (Kas/QRIS)</div>
+                            <div class="arrow">↓</div>
+                            <div class="step">Cetak Struk 2 Rangkap (Pelanggan &amp; Dapur)</div>
+                        </div>
+                        <div class="lane">
+                            <div class="lane-title">KARYAWAN 2 (DAPUR)</div>
+                            <div class="step">Terima Struk Rangkap 2</div>
+                            <div class="arrow">↓</div>
+                            <div class="step">Menyiapkan Ketoprak Sesuai Struk</div>
+                            <div class="arrow">↓</div>
+                            <div class="step">Serahkan Makanan ke Pelanggan</div>
+                            <div class="arrow">↓</div>
+                            <div class="step">[SELESAI OPERASIONAL]</div>
+                        </div>
+                        <div class="lane">
+                            <div class="lane-title">PEMILIK (OWNER)</div>
+                            <div class="step">Beli Bahan Baku &amp; Input Form Kas Keluar</div>
+                            <div class="arrow">↓</div>
+                            <div class="step">Upload Foto Nota Fisik</div>
+                            <div class="arrow">↓</div>
+                            <div class="step">Hitung Kas Fisik Akhir Hari (Cash Count)</div>
+                            <div class="arrow">↓</div>
+                            <div class="step">Cek Selisih Kas → Verifikasi / Investigasi</div>
+                        </div>
+                        <div class="lane">
+                            <div class="lane-title">SISTEM (DATABASE SIA-P)</div>
+                            <div class="step">Update Stok Bahan &amp; Produk Otomatis</div>
+                            <div class="arrow">↓</div>
+                            <div class="step">[DATABASE SIMPAN JURNAL]</div>
+                            <div class="arrow">↓</div>
+                            <div class="step">Laporan Laba Rugi &amp; Neraca (SAK EMKM)</div>
+                            <div class="arrow">↓</div>
+                            <div class="step">Dasbor Tax Tracker PP 55/2022</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-20">
+                    <h3>Matriks Pengendalian Internal (Internal Control)</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Komponen / Modul</th>
+                                <th>Fitur Pengendalian / Aturan Sistem</th>
+                                <th>Tujuan Control &amp; Pencegahan Risiko</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Form POS Penjualan</strong></td>
+                                <td>Kolom Total Harga dan Diskon dibuat Read-Only dan dihitung otomatis oleh sistem.</td>
+                                <td>Mencegah kasir memanipulasi nominal tagihan atau melakukan pemotongan harga tanpa izin (mencegah skimming).</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Form Pembelian / Kas Keluar</strong></td>
+                                <td>Wajib mengunggah lampiran foto/scan bukti nota fisik pembelian untuk setiap transaksi.</td>
+                                <td>Menghindari pengeluaran kas fiktif atau pencatatan pengeluaran tanpa bukti valid.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Hak Akses Sistem (SOD)</strong></td>
+                                <td>Kasir hanya dapat menginput penjualan; Pemilik memegang akses penuh laporan &amp; pengeluaran kas.</td>
+                                <td>Menerapkan Segregation of Duties agar penerima kas tidak mengubah laporan keuangan secara sepihak.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Dasbor Pajak Otomatis</strong></td>
+                                <td>Sistem menghitung omzet kumulatif dan mengunci tarif 0% selama belum melebihi batas Rp500 Juta.</td>
+                                <td>Mencegah kesalahan perhitungan kewajiban pajak UMKM (kepatuhan PP 55/2022).</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- TAB: 1.0 MASTER DATA -->
+            <section id="tab-master" class="tab-panel">
+                <div class="section-header">
+                    <h2>1.0 Modul Master Data</h2>
+                </div>
+                <div class="grid-2">
+                    <div class="card">
+                        <h3>1.1 Data Produk &amp; Bahan Baku</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr><th>Kode</th><th>Nama Item</th><th>Kategori</th><th>Harga/HPP</th><th>Stok</th></tr>
+                            </thead>
+                            <tbody id="master-items-body"></tbody>
+                        </table>
+                    </div>
+                    <div class="card">
+                        <h3>1.2 Supplier, 1.4 Karyawan &amp; 1.5 COA</h3>
+                        <p class="mb-10"><strong>Vendor Utama:</strong> Toko Bumbu Barokah (NPWP: 93.452.108.4-504.000)</p>
+                        <p class="mb-10"><strong>Karyawan 1:</strong> Staf Produksi / Kasir (Status PTKP: TK/0)</p>
+                        <p class="mb-10"><strong>Karyawan 2:</strong> Staf Dapur (Status PTKP: TK/0)</p>
+                        <table class="data-table">
+                            <thead>
+                                <tr><th>Kode Akun</th><th>Nama Akun (COA SAK EMKM)</th><th>Saldo Normal</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>1-1100</td><td>Kas dan Bank</td><td>Debit</td></tr>
+                                <tr><td>1-1200</td><td>Persediaan Bahan Baku</td><td>Debit</td></tr>
+                                <tr><td>1-2100</td><td>Peralatan Usaha (Neto)</td><td>Debit</td></tr>
+                                <tr><td>3-1000</td><td>Modal Pemilik</td><td>Kredit</td></tr>
+                                <tr><td>4-1000</td><td>Penjualan Bersih</td><td>Kredit</td></tr>
+                                <tr><td>5-1100</td><td>Beban Pokok Penjualan / Bahan Baku</td><td>Debit</td></tr>
+                                <tr><td>5-2100</td><td>Beban Gaji Karyawan</td><td>Debit</td></tr>
+                                <tr><td>5-2200</td><td>Beban Sewa &amp; Utilitas</td><td>Debit</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: 2.1 POS PENJUALAN -->
+            <section id="tab-pos" class="tab-panel">
+                <div class="section-header">
+                    <h2>2.1 Form Input Penjualan (POS / Faktur Penjualan)</h2>
+                    <span class="control-pill">Control: Harga &amp; Diskon Read-Only</span>
+                </div>
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="form-row">
+                            <div>
+                                <label>No. Faktur</label>
+                                <input type="text" id="pos-invoice" value="FK-202611-0090" readonly>
+                            </div>
+                            <div>
+                                <label>Tanggal &amp; Waktu</label>
+                                <input type="text" id="pos-date" readonly>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div>
+                                <label>Kasir Bertugas</label>
+                                <input type="text" id="pos-cashier" value="Karyawan 1" readonly>
+                            </div>
+                            <div>
+                                <label>Metode Bayar</label>
+                                <select id="pos-payment">
+                                    <option value="Tunai">Tunai (Kas)</option>
+                                    <option value="QRIS">QRIS (Bank)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="pos-add-bar">
+                            <select id="pos-product-select"></select>
+                            <input type="number" id="pos-qty" value="1" min="1" max="100">
+                            <button type="button" class="btn btn-primary" onclick="addPosItem()">+ Tambah Item</button>
+                        </div>
+
+                        <table class="data-table mt-10">
+                            <thead>
+                                <tr>
+                                    <th>Kode</th>
+                                    <th>Nama Produk</th>
+                                    <th>Harga (RO)</th>
+                                    <th>Qty</th>
+                                    <th>Diskon (RO)</th>
+                                    <th>Total (RO)</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pos-cart-body"></tbody>
+                        </table>
+
+                        <div class="summary-box mt-15">
+                            <div class="sum-line"><span>Total Kotor:</span><strong id="pos-gross">Rp 0</strong></div>
+                            <div class="sum-line"><span>DPP | PPN (0% Non-PKP):</span><span>Rp 0</span></div>
+                            <div class="sum-line total"><span>TOTAL BAYAR:</span><strong id="pos-total">Rp 0</strong></div>
+                        </div>
+
+                        <button type="button" class="btn btn-success w-100 mt-15" onclick="submitSale()">Simpan Transaksi &amp; Cetak Struk 2 Rangkap</button>
+                    </div>
+
+                    <!-- Preview Struk 2 Rangkap -->
+                    <div class="card">
+                        <h3>Preview Struk Penjualan (2 Rangkap)</h3>
+                        <p class="text-muted">Rangkap 1 untuk Pelanggan, Rangkap 2 diserahkan ke Karyawan 2 (Dapur).</p>
+                        <div id="receipt-preview" class="receipt-box">
+                            <p class="text-center">Belum ada transaksi baru dicetak.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: 2.2 PEMBELIAN & KAS KELUAR -->
+            <section id="tab-expense" class="tab-panel">
+                <div class="section-header">
+                    <h2>2.2 Form Input Pembelian &amp; Kas Keluar</h2>
+                    <span class="control-pill">Control: Wajib Lampiran Foto Nota Fisik</span>
+                </div>
+                <div class="card max-w-700">
+                    <div class="form-row">
+                        <div>
+                            <label>No. Kas Keluar</label>
+                            <input type="text" id="exp-no" value="KK-202611-0035" readonly>
+                        </div>
+                        <div>
+                            <label>Tanggal</label>
+                            <input type="date" id="exp-date" value="2026-11-19">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label>Nama Vendor / Supplier</label>
+                            <input type="text" id="exp-vendor" value="Toko Bumbu Barokah">
+                        </div>
+                        <div>
+                            <label>NPWP Vendor</label>
+                            <input type="text" id="exp-npwp" value="93.452.108.4-504.000">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label>Kode Akun Beban / Aset</label>
+                            <select id="exp-account">
+                                <option value="1-1200">1-1200 - Persediaan Bahan Baku</option>
+                                <option value="5-1100">5-1100 - Beban Bahan Baku Langsung</option>
+                                <option value="5-2200">5-2200 - Beban Sewa &amp; Utilitas (Listrik/Air)</option>
+                                <option value="5-2300">5-2300 - Beban Perlengkapan &amp; Operasional Lain</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Nominal Pengeluaran Kas (Rp)</label>
+                            <input type="number" id="exp-amount" value="350000" min="1000">
